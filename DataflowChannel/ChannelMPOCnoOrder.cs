@@ -111,9 +111,11 @@ namespace DataflowChannel
         {
             unchecked
             {
-                var adr = 0;
+                //var adr = 0;
+                //var id      = (int)((long)&adr >> 16);
+                //var id = Thread.CurrentThread.ManagedThreadId;
+                var id = Environment.CurrentManagedThreadId;
                 var channel = _channel;
-                var id      = (int)((long)&adr >> 16);
                 var buffer  = channel.WriterLinks[id % channel.Size];
 
                 if (buffer.Id != id)
