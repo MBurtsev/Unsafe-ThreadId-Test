@@ -107,21 +107,18 @@ namespace DataflowChannel
             try
             {
                 var buffer = new CycleBuffer();
-                var link = new WriterLink(buffer.Writer.Messages);
+                var link = buffer.Writer.WriterLink;
 
                 channel.Storage.Value = buffer;
                 channel.WriterLinks.Value = link;
 
-                buffer.Next  = channel.Head;
-                channel.Head = buffer;
-
-                if (buffer.Next == null)
+                if (buffer.Head == null)
                 {
                     channel.Reader = buffer;
                 }
 
-                // write new link
-                _channel = channel;
+                buffer.Next  = channel.Head;
+                channel.Head = buffer;
 
                 return link;
             }
