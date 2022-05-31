@@ -95,6 +95,92 @@ namespace DataflowChannel
             }
         }
 
+        public bool TryRead([MaybeNullWhen(false)] out T value)
+        {
+            unchecked
+            {
+                var channel = _channel;
+                var start   = channel.Reader;
+                var cur     = start;
+
+                if (cur == null)
+                {
+                    value = default;
+
+                    return false;
+                }
+
+                do
+                {
+                    var seg = cur.Reader;
+                    var pos = seg.ReaderPosition;
+
+                    if (pos == SEGMENT_CAPACITY)
+                    {
+                        if (seg == cur.Writer)
+                        {
+                            goto proceed;
+                        }
+
+                        CycleBufferSegment next;
+
+                        if (seg.Next != null)
+                        {
+                            next = seg.Next;
+                        }
+                        else
+                        {
+                            next = cur.Head;
+                        }
+
+                        pos = next.ReaderPosition = 0;
+                        seg = cur.Reader = next;
+                    }
+
+                    // reader position check
+                    if (seg != cur.Writer || pos != seg.WriterLink.WriterPosition)
+                    {
+                        value = seg.Messages[pos];
+
+                        seg.ReaderPosition = pos + 1;
+
+                        return true;
+                    }
+
+                proceed:
+                    cur = channel.Reader = cur.Next;
+
+                    if (cur == null)
+                    {
+                        cur = channel.Reader = channel.Head;
+                    }
+                }
+                while (cur != start);
+
+                value = default;
+
+                return false;
+            }
+        }
+
+        public void Clear()
+        {
+            var channel = _channel;
+
+            // set lock
+            while (Interlocked.CompareExchange(ref channel.SyncChannel, 1, 0) != 0)
+            {
+                channel = Volatile.Read(ref _channel);
+            }
+
+            var newChannel = new ChannelData();
+
+            _channel = newChannel;
+
+            // unlock
+            channel.SyncChannel = 0;
+        }
+
         private WriterLink SetupThread(ref ChannelData channel)
         {
             // set lock
