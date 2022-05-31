@@ -18,7 +18,8 @@ namespace DataflowBench
             //BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, new DebugInProcessConfig());
 
             // ChannelMPOCnoOrder
-            BenchmarkRunner.Run<MPOCnoOrderWrite>();
+            //BenchmarkRunner.Run<MPOCnoOrderWrite>();
+            BenchmarkRunner.Run<WriteWithThreadLocal>();
 
             Console.WriteLine("Press any key for exit");
             Console.ReadKey();
